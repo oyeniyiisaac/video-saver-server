@@ -20,11 +20,14 @@ Copy `.env.example` to `.env`:
 PORT=5000
 MONGODB_URI=mongodb://localhost:27017/video-saver
 CLIENT_URL=http://localhost:5173
+# Optional: Netscape cookies.txt content to bypass YouTube/Reddit cloud datacenter bot challenges
+YTDLP_COOKIES=
 ```
 
 - `PORT`: Port the Express server listens on (default: `5000`).
 - `MONGODB_URI`: MongoDB connection string (e.g. local or MongoDB Atlas).
 - `CLIENT_URL`: Exact URL of the frontend client. **Never uses a wildcard origin.**
+- `YTDLP_COOKIES`: (Optional) Raw exported `cookies.txt` string to bypass cloud datacenter IP verification challenges on platforms like YouTube and Reddit.
 
 ## Local Development
 
