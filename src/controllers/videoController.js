@@ -66,8 +66,13 @@ export async function getInfo(req, res, next) {
     try {
       result = await run(args, { timeout: 45000 });
     } catch (err) {
-      const friendlyError = sanitizeYtdlpError(err.message || err.stderr);
-      return res.status(422).json({ error: friendlyError || 'Failed to retrieve media information.' });
+      const errMsg = err.stderr || err.message || '';
+      console.error('[GetInfo Error]:', errMsg);
+      const friendlyError = sanitizeYtdlpError(errMsg);
+      return res.status(422).json({
+        error: friendlyError || 'Failed to retrieve media information.',
+        details: errMsg.slice(0, 300),
+      });
     }
 
     let parsed;
