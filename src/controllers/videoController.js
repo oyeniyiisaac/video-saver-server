@@ -264,5 +264,5 @@ export async function getStats(req, res, next) {
  * GET /api/health
  */
 export function healthCheck(req, res) {
-  return res.json({ ok: true });
+  return res.json({ ok: true, version: '2026.11.10-patch2' });
 }
