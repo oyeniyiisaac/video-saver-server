@@ -23,8 +23,16 @@ function sanitizeYtdlpError(errorMsg = '') {
   if (lower.includes('sign in to confirm your age') || lower.includes('age-restricted')) {
     return 'This video is age-restricted and cannot be downloaded anonymously.';
   }
+  if (
+    lower.includes('sign in to confirm you’re not a bot') ||
+    lower.includes('confirm you are not a bot') ||
+    lower.includes('confirm you\'re not a bot') ||
+    lower.includes('bot')
+  ) {
+    return 'YouTube requires verification for this video on cloud servers. Set YTDLP_COOKIES in Render, or run locally to download.';
+  }
   if (lower.includes('http error 429') || lower.includes('too many requests')) {
-    return 'The content provider is rate limiting requests. Please try again later.';
+    return 'The content provider is rate limiting requests from this cloud server. Please try again later or provide YTDLP_COOKIES.';
   }
   if (lower.includes('unsupported url') || lower.includes('is not a valid url')) {
     return 'Unsupported link or invalid media URL.';
@@ -271,5 +279,5 @@ export async function getStats(req, res, next) {
  * GET /api/health
  */
 export function healthCheck(req, res) {
-  return res.json({ ok: true, version: '2026.11.10-patch4' });
+  return res.json({ ok: true, version: '2026.11.10-patch5' });
 }
