@@ -55,7 +55,7 @@ export async function getInfo(req, res, next) {
 
     const args = [
       '--js-runtimes', 'node',
-      '--extractor-args', 'youtube:player_client=android,ios',
+      '--extractor-args', 'youtube:player_client=android,ios;player_skip=webpage,configs',
       '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       '-J',
       '--no-playlist',
@@ -149,7 +149,7 @@ export async function download(req, res, next) {
 
     const args = [
       '--js-runtimes', 'node',
-      '--extractor-args', 'youtube:player_client=android,ios',
+      '--extractor-args', 'youtube:player_client=android,ios;player_skip=webpage,configs',
       '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       '--no-playlist',
       '--max-filesize', '500M',
@@ -271,5 +271,5 @@ export async function getStats(req, res, next) {
  * GET /api/health
  */
 export function healthCheck(req, res) {
-  return res.json({ ok: true, version: '2026.11.10-patch3' });
+  return res.json({ ok: true, version: '2026.11.10-patch4' });
 }
