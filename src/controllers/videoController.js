@@ -55,6 +55,7 @@ export async function getInfo(req, res, next) {
 
     const args = [
       '--js-runtimes', 'node',
+      '--extractor-args', 'youtube:player_client=android,web',
       '-J',
       '--no-playlist',
       '--',
@@ -142,6 +143,7 @@ export async function download(req, res, next) {
 
     const args = [
       '--js-runtimes', 'node',
+      '--extractor-args', 'youtube:player_client=android,web',
       '--no-playlist',
       '--max-filesize', '500M',
       '--no-warnings',
