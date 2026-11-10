@@ -1,3 +1,4 @@
-/.env
-/.env.example
-/Dockerfile
+node_modules
+bin/
+.env
+npm-debug.log

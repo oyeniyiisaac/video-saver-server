@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import { connectDB } from './config/db.js';
 import videoRoutes from './routes/videoRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
+import { ensureBinaries } from '../scripts/install-binaries.js';
 
 dotenv.config();
 
@@ -19,13 +20,13 @@ app.use(helmet());
 
 // CORS configuration (Strict - Never wildcard origin)
 const clientUrlEnv = process.env.CLIENT_URL;
-const allowedOrigins = clientUrlEnv
-  ? clientUrlEnv.split(',').map(url => url.trim())
+const rawOrigins = clientUrlEnv
+  ? clientUrlEnv.split(',').map(url => url.trim().replace(/\/+$/, ''))
   : ['http://localhost:5174', 'http://127.0.0.1:5174'];
 
 // Ensure both localhost and 127.0.0.1 on the specified ports are permitted
-const expandedOrigins = new Set(allowedOrigins);
-for (const origin of allowedOrigins) {
+const expandedOrigins = new Set(rawOrigins);
+for (const origin of rawOrigins) {
   if (origin.includes('localhost')) {
     expandedOrigins.add(origin.replace('localhost', '127.0.0.1'));
   } else if (origin.includes('127.0.0.1')) {
@@ -39,7 +40,8 @@ app.use(
     origin: (origin, callback) => {
       // Allow server-to-server or tools with no origin header
       if (!origin) return callback(null, true);
-      if (finalAllowedOrigins.includes(origin)) {
+      const cleanOrigin = origin.replace(/\/+$/, '');
+      if (finalAllowedOrigins.includes(cleanOrigin)) {
         return callback(null, true);
       }
       return callback(new Error(`CORS policy violation: Origin ${origin} not allowed.`));
@@ -65,6 +67,7 @@ app.use(errorHandler);
 
 // Connect to MongoDB and start server
 async function startServer() {
+  await ensureBinaries();
   await connectDB();
 
   const server = app.listen(PORT, () => {

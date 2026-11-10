@@ -1,5 +1,13 @@
 import { spawn } from 'child_process';
 import path from 'path';
+import fs from 'fs';
+import { fileURLToPath } from 'url';
+import ffmpegInstaller from '@ffmpeg-installer/ffmpeg';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, '../..');
+const localBinYtdlp = path.join(projectRoot, 'bin', 'yt-dlp');
 
 // Supported platform domains allowlist (SSRF prevention)
 export const ALLOWED_DOMAINS = [
@@ -66,7 +74,7 @@ export function validateUrl(rawUrl) {
   let parsed;
   try {
     parsed = new URL(rawUrl.trim());
-  } catch (err) {
+  } catch {
     return { valid: false, error: 'Invalid URL format' };
   }
 
@@ -91,18 +99,47 @@ export function validateUrl(rawUrl) {
 }
 
 /**
+ * Resolves the location of the yt-dlp executable.
+ * Checks project local bin/yt-dlp, ~/.local/bin/yt-dlp, or system PATH.
+ */
+export function getYtdlpCommand() {
+  if (fs.existsSync(localBinYtdlp)) {
+    return localBinYtdlp;
+  }
+  if (process.env.HOME) {
+    const userLocal = path.join(process.env.HOME, '.local', 'bin', 'yt-dlp');
+    if (fs.existsSync(userLocal)) {
+      return userLocal;
+    }
+  }
+  return 'yt-dlp';
+}
+
+/**
  * Spawns yt-dlp with an array of arguments (never a shell string) and a timeout.
- * PATH is augmented to ensure local and system binaries are reachable.
+ * PATH is augmented to ensure local project binaries, ffmpeg-installer, and system paths are reachable.
  */
 export function run(args, options = {}) {
   const timeoutMs = options.timeout || 1800000; // default 30 minutes for long videos
+
+  // Construct augmented PATH including ffmpeg and yt-dlp bin locations
+  const extraPaths = [path.join(projectRoot, 'bin')];
+  if (process.env.HOME) {
+    extraPaths.push(path.join(process.env.HOME, '.local', 'bin'));
+  }
+  if (ffmpegInstaller && ffmpegInstaller.path) {
+    extraPaths.push(path.dirname(ffmpegInstaller.path));
+  }
+
   const customEnv = {
     ...process.env,
-    PATH: `${process.env.HOME}/.local/bin:${process.env.PATH}`,
+    PATH: `${extraPaths.join(':')}:${process.env.PATH || ''}`,
   };
 
+  const executable = getYtdlpCommand();
+
   return new Promise((resolve, reject) => {
-    const proc = spawn('yt-dlp', args, {
+    const proc = spawn(executable, args, {
       env: customEnv,
       cwd: options.cwd || process.cwd(),
       stdio: ['ignore', 'pipe', 'pipe'],
@@ -130,7 +167,11 @@ export function run(args, options = {}) {
     proc.on('error', err => {
       clearTimeout(timer);
       finished = true;
-      reject(err);
+      if (err.code === 'ENOENT') {
+        reject(new Error('yt-dlp binary was not found on the server. Please verify binary installation.'));
+      } else {
+        reject(err);
+      }
     });
 
     proc.on('close', code => {
