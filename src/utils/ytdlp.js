@@ -116,6 +116,27 @@ export function getYtdlpCommand() {
   return 'yt-dlp';
 }
 
+export function getEffectiveCookiePath() {
+  if (process.env.YTDLP_COOKIES && process.env.YTDLP_COOKIES.trim().length > 0) {
+    const tmpCookie = path.join(os.tmpdir(), 'ytdlp_env_cookies.txt');
+    try {
+      fs.writeFileSync(tmpCookie, process.env.YTDLP_COOKIES.trim(), 'utf8');
+      return tmpCookie;
+    } catch (e) {
+      console.warn('[ytdlp] Could not write YTDLP_COOKIES to tmp:', e.message);
+    }
+  }
+  const cookiePath = path.join(projectRoot, 'cookies.txt');
+  if (fs.existsSync(cookiePath)) {
+    return cookiePath;
+  }
+  return null;
+}
+
+export function hasCookies() {
+  return Boolean(getEffectiveCookiePath());
+}
+
 /**
  * Spawns yt-dlp with an array of arguments (never a shell string) and a timeout.
  * PATH is augmented to ensure local project binaries, ffmpeg-installer, and system paths are reachable.
@@ -140,19 +161,7 @@ export function run(args, options = {}) {
   const executable = getYtdlpCommand();
 
   // Check for cookies configuration (via env YTDLP_COOKIES or cookies.txt file)
-  const cookiePath = path.join(projectRoot, 'cookies.txt');
-  let effectiveCookiePath = null;
-  if (process.env.YTDLP_COOKIES && process.env.YTDLP_COOKIES.trim().length > 0) {
-    const tmpCookie = path.join(os.tmpdir(), 'ytdlp_env_cookies.txt');
-    try {
-      fs.writeFileSync(tmpCookie, process.env.YTDLP_COOKIES.trim(), 'utf8');
-      effectiveCookiePath = tmpCookie;
-    } catch (e) {
-      console.warn('[ytdlp] Could not write YTDLP_COOKIES to tmp:', e.message);
-    }
-  } else if (fs.existsSync(cookiePath)) {
-    effectiveCookiePath = cookiePath;
-  }
+  const effectiveCookiePath = getEffectiveCookiePath();
 
   const finalArgs = [...args];
   if (effectiveCookiePath && !finalArgs.includes('--cookies')) {

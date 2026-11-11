@@ -1,7 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import os from 'os';
-import { validateUrl, run } from '../utils/ytdlp.js';
+import { validateUrl, run, hasCookies } from '../utils/ytdlp.js';
 import { recordDownload, getStats as getAggregatedStats } from '../models/Download.js';
 
 /**
@@ -63,13 +63,15 @@ export async function getInfo(req, res, next) {
 
     const args = [
       '--js-runtimes', 'node',
-      '--extractor-args', 'youtube:player_client=android,ios;player_skip=webpage,configs',
       '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-      '-J',
-      '--no-playlist',
-      '--',
-      validation.url,
     ];
+
+    // Android/iOS clients do not support cookies. Only pass mobile extractor args if NO cookies are configured.
+    if (!hasCookies()) {
+      args.push('--extractor-args', 'youtube:player_client=android,ios;player_skip=webpage,configs');
+    }
+
+    args.push('-J', '--no-playlist', '--', validation.url);
 
     let result;
     try {
@@ -157,7 +159,6 @@ export async function download(req, res, next) {
 
     const args = [
       '--js-runtimes', 'node',
-      '--extractor-args', 'youtube:player_client=android,ios;player_skip=webpage,configs',
       '--user-agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       '--no-playlist',
       '--max-filesize', '500M',
@@ -165,6 +166,11 @@ export async function download(req, res, next) {
       '--concurrent-fragments', '8',
       '--http-chunk-size', '10M',
     ];
+
+    // Android/iOS clients do not support cookies. Only pass mobile extractor args if NO cookies are configured.
+    if (!hasCookies()) {
+      args.push('--extractor-args', 'youtube:player_client=android,ios;player_skip=webpage,configs');
+    }
 
     if (isAudio) {
       args.push(
@@ -279,5 +285,5 @@ export async function getStats(req, res, next) {
  * GET /api/health
  */
 export function healthCheck(req, res) {
-  return res.json({ ok: true, version: '2026.11.10-patch5' });
+  return res.json({ ok: true, version: '2026.11.11-patch6' });
 }
